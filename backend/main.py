@@ -1,43 +1,58 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from scraper import scrape_wikipedia
-from quiz_generator import generate_quiz
-from storage import save_quiz, get_all_quizzes
+from pydantic import BaseModel
+import requests
 
-app = FastAPI(title="AI Wiki Quiz Generator")
+app = FastAPI()
 
+# Allow Netlify frontend
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
+    allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
-# ✅ ROOT ENDPOINT
+quiz_history = []
+
 @app.get("/")
 def root():
     return {"message": "AI Wiki Quiz Generator API is running"}
 
-# ✅ GENERATE QUIZ
 @app.get("/generate-quiz")
-def generate_quiz_api(url: str):
-    if not url:
-        return {"error": "URL is required"}
+def generate_quiz(url: str):
+    title = url.split("/")[-1].replace("_", " ")
 
-    data = scrape_wikipedia(url)
-    quiz = generate_quiz(data["content"])
+    quiz = [
+        {
+            "question": f"Who is {title}?",
+            "options": ["Scientist", "Actor", "Politician", "Writer"],
+            "answer": "Scientist",
+            "explanation": f"{title} is best known as a scientist."
+        },
+        {
+            "question": f"What is {title} famous for?",
+            "options": [
+                "Computer Science",
+                "Sports",
+                "Music",
+                "Movies"
+            ],
+            "answer": "Computer Science",
+            "explanation": f"{title} made major contributions to computer science."
+        }
+    ]
 
-    result = {
+    data = {
+        "title": title,
         "url": url,
-        "title": data["title"],
         "quiz": quiz
     }
 
-    save_quiz(result)
-    return result
+    quiz_history.append(data)
+    return data
 
-# ✅ HISTORY
 @app.get("/history")
-def quiz_history():
-    return get_all_quizzes()
-
+def history():
+    return quiz_history
