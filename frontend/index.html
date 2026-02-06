@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>AI Wiki Quiz Generator</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      padding: 20px;
+    }
+
+    input {
+      width: 80%;
+      padding: 8px;
+      margin: 5px 0;
+    }
+
+    button {
+      padding: 8px 12px;
+      margin: 5px;
+      cursor: pointer;
+    }
+
+    .tab {
+      display: none;
+    }
+
+    .active {
+      display: block;
+    }
+
+    .card {
+      border: 1px solid #ccc;
+      padding: 15px;
+      margin-top: 10px;
+      border-radius: 5px;
+      background: #f9f9f9;
+    }
+  </style>
+</head>
+
+<body>
+
+<h2>AI Wiki Quiz Generator</h2>
+
+<button onclick="showTab('generate')">Generate Quiz</button>
+<button onclick="showTab('history')">Past Quizzes</button>
+
+<hr/>
+
+<!-- GENERATE TAB -->
+<div id="generate" class="tab active">
+  <input
+    id="url"
+    type="text"
+    placeholder="Paste Wikipedia URL here"
+  />
+  <br/>
+  <button onclick="generateQuiz()">Generate Quiz</button>
+
+  <div id="result"></div>
+</div>
+
+<!-- HISTORY TAB -->
+<div id="history" class="tab">
+  <button onclick="loadHistory()">Load History</button>
+  <div id="historyResult"></div>
+</div>
+
+<script>
+/* TAB SWITCHING */
+function showTab(tab) {
+  document.getElementById("generate").classList.remove("active");
+  document.getElementById("history").classList.remove("active");
+  document.getElementById(tab).classList.add("active");
+}
+
+/* GENERATE QUIZ */
+function generateQuiz() {
+  const url = document.getElementById("url").value;
+
+  if (!url) {
+    alert("Please paste a Wikipedia URL");
+    return;
+  }
+
+  const apiUrl =
+    "http://127.0.0.1:8000/generate-quiz?url=" +
+    encodeURIComponent(url);
+
+  fetch(apiUrl)
+    .then(res => {
+      if (!res.ok) {
+        throw new Error("Server error");
+      }
+      return res.json();
+    })
+    .then(data => {
+      let html = `<h3>${data.title}</h3>`;
+
+      data.quiz.forEach((q, i) => {
+        html += `
+          <div class="card">
+            <b>Q${i + 1}: ${q.question}</b>
+            <ul>
+              ${q.options.map(o => `<li>${o}</li>`).join("")}
+            </ul>
+            <b>Answer:</b> ${q.answer}<br/>
+            <i>${q.explanation}</i>
+          </div>
+        `;
+      });
+
+      document.getElementById("result").innerHTML = html;
+    })
+    .catch(err => {
+      alert("Error generating quiz");
+      console.error(err);
+    });
+}
+
+/* LOAD HISTORY */
+function loadHistory() {
+  fetch("http://127.0.0.1:8000/history")
+    .then(res => res.json())
+    .then(data => {
+      let html = "";
+
+      data.forEach((item, index) => {
+        html += `
+          <div class="card">
+            <b>${index + 1}. ${item.title}</b><br/>
+            <small>${item.url}</small><br/>
+            <button onclick='showDetails(${JSON.stringify(item)})'>
+              Details
+            </button>
+          </div>
+        `;
+      });
+
+      document.getElementById("historyResult").innerHTML = html;
+    });
+}
+
+/* SHOW HISTORY DETAILS */
+function showDetails(item) {
+  let html = `<h3>${item.title}</h3>`;
+
+  item.quiz.forEach((q, i) => {
+    html += `
+      <div class="card">
+        <b>Q${i + 1}: ${q.question}</b>
+        <ul>
+          ${q.options.map(o => `<li>${o}</li>`).join("")}
+        </ul>
+        <b>Answer:</b> ${q.answer}<br/>
+        <i>${q.explanation}</i>
+      </div>
+    `;
+  });
+
+  document.getElementById("historyResult").innerHTML = html;
+}
+</script>
+
+</body>
+</html>
