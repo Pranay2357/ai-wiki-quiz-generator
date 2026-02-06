@@ -2,6 +2,7 @@
 <html>
 <head>
   <title>AI Wiki Quiz Generator</title>
+
   <style>
     body {
       font-family: Arial, sans-serif;
@@ -47,7 +48,7 @@
 
 <hr/>
 
-<!-- GENERATE TAB -->
+<!-- ================= GENERATE TAB ================= -->
 <div id="generate" class="tab active">
   <input
     id="url"
@@ -60,21 +61,21 @@
   <div id="result"></div>
 </div>
 
-<!-- HISTORY TAB -->
+<!-- ================= HISTORY TAB ================= -->
 <div id="history" class="tab">
   <button onclick="loadHistory()">Load History</button>
   <div id="historyResult"></div>
 </div>
 
 <script>
-/* TAB SWITCHING */
+/* ---------------- TAB SWITCHING ---------------- */
 function showTab(tab) {
   document.getElementById("generate").classList.remove("active");
   document.getElementById("history").classList.remove("active");
   document.getElementById(tab).classList.add("active");
 }
 
-/* GENERATE QUIZ */
+/* ---------------- GENERATE QUIZ ---------------- */
 function generateQuiz() {
   const url = document.getElementById("url").value;
 
@@ -84,7 +85,7 @@ function generateQuiz() {
   }
 
   const apiUrl =
-    "http://127.0.0.1:8000/generate-quiz?url=" +
+    "https://ai-wiki-quiz-backend-s908.onrender.com/generate-quiz?url=" +
     encodeURIComponent(url);
 
   fetch(apiUrl)
@@ -118,9 +119,9 @@ function generateQuiz() {
     });
 }
 
-/* LOAD HISTORY */
+/* ---------------- LOAD HISTORY ---------------- */
 function loadHistory() {
-  fetch("http://127.0.0.1:8000/history")
+  fetch("https://ai-wiki-quiz-backend-s908.onrender.com/history")
     .then(res => res.json())
     .then(data => {
       let html = "";
@@ -138,10 +139,14 @@ function loadHistory() {
       });
 
       document.getElementById("historyResult").innerHTML = html;
+    })
+    .catch(err => {
+      alert("Error loading history");
+      console.error(err);
     });
 }
 
-/* SHOW HISTORY DETAILS */
+/* ---------------- SHOW HISTORY DETAILS ---------------- */
 function showDetails(item) {
   let html = `<h3>${item.title}</h3>`;
 
