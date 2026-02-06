@@ -1,118 +1,166 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
+  <meta charset="UTF-8" />
   <title>AI Wiki Quiz Generator</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
   <style>
-    body { font-family: Arial; padding: 20px; }
-    button { padding: 8px 12px; margin: 5px; }
-    input { width: 80%; padding: 8px; }
-    .tab { display: none; }
-    .active { display: block; }
-    .card {
-      border: 1px solid #ccc;
-      padding: 15px;
-      margin-top: 10px;
-      border-radius: 5px;
+    body {
+      font-family: Arial, sans-serif;
+      background: #f4f6f8;
+      margin: 0;
+      padding: 20px;
+    }
+
+    h1 {
+      text-align: center;
+    }
+
+    .container {
+      max-width: 800px;
+      margin: auto;
+      background: #ffffff;
+      padding: 20px;
+      border-radius: 8px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+
+    input {
+      width: 100%;
+      padding: 10px;
+      margin: 10px 0;
+      font-size: 16px;
+    }
+
+    button {
+      padding: 10px 20px;
+      font-size: 16px;
+      cursor: pointer;
+      background: #007bff;
+      color: white;
+      border: none;
+      border-radius: 4px;
+    }
+
+    button:hover {
+      background: #0056b3;
+    }
+
+    .quiz {
+      margin-top: 20px;
+    }
+
+    .question {
+      margin-bottom: 15px;
+      padding: 10px;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+    }
+
+    .options li {
+      list-style: none;
+      margin: 5px 0;
+    }
+
+    .answer {
+      color: green;
+      font-weight: bold;
+    }
+
+    .error {
+      color: red;
+      font-weight: bold;
     }
   </style>
 </head>
-
 <body>
 
-<h2>AI Wiki Quiz Generator</h2>
+  <h1>AI Wiki Quiz Generator</h1>
 
-<button onclick="showTab('generate')">Generate Quiz</button>
-<button onclick="showTab('history')">Past Quizzes</button>
+  <div class="container">
+    <input
+      type="text"
+      id="wikiUrl"
+      placeholder="Paste Wikipedia URL (e.g. https://en.wikipedia.org/wiki/Alan_Turing)"
+    />
 
-<hr/>
+    <button onclick="generateQuiz()">Generate Quiz</button>
 
-<!-- GENERATE TAB -->
-<div id="generate" class="tab active">
-  <input id="url" placeholder="Paste Wikipedia URL here" />
-  <button onclick="generateQuiz()">Generate Quiz</button>
-  <div id="result"></div>
-</div>
+    <div id="status"></div>
+    <div id="quizContainer" class="quiz"></div>
+  </div>
 
-<!-- HISTORY TAB -->
-<div id="history" class="tab">
-  <button onclick="loadHistory()">Load History</button>
-  <div id="historyResult"></div>
-</div>
+  <script>
+    const API_BASE = "https://ai-wiki-quiz-generator-21c1.onrender.com";
 
-<script>
-const BACKEND = "https://ai-wiki-quiz-backend-s908.onrender.com";
+    function generateQuiz() {
+      const wikiUrl = document.getElementById("wikiUrl").value.trim();
+      const quizContainer = document.getElementById("quizContainer");
+      const status = document.getElementById("status");
 
-/* TAB SWITCH */
-function showTab(tab) {
-  document.getElementById("generate").classList.remove("active");
-  document.getElementById("history").classList.remove("active");
-  document.getElementById(tab).classList.add("active");
-}
+      quizContainer.innerHTML = "";
+      status.innerHTML = "";
 
-/* GENERATE QUIZ */
-function generateQuiz() {
-  const url = document.getElementById("url").value;
+      if (!wikiUrl) {
+        status.innerHTML = "<p class='error'>Please enter a Wikipedia URL</p>";
+        return;
+      }
 
-  fetch(`${BACKEND}/generate-quiz?url=${encodeURIComponent(url)}`)
-    .then(res => res.json())
-    .then(data => {
-      let html = `<h3>${data.title}</h3>`;
+      status.innerHTML = "Generating quiz...";
 
-      data.quiz.forEach((q, i) => {
-        html += `
-          <div class="card">
-            <b>Q${i+1}: ${q.question}</b>
-            <ul>${q.options.map(o => `<li>${o}</li>`).join("")}</ul>
-            <b>Answer:</b> ${q.answer}<br/>
-            <i>${q.explanation}</i>
-          </div>
-        `;
+      fetch(`${API_BASE}/generate-quiz?url=${encodeURIComponent(wikiUrl)}`)
+        .then(response => {
+          if (!response.ok) {
+            throw new Error("API error");
+          }
+          return response.json();
+        })
+        .then(data => {
+          status.innerHTML = "";
+          renderQuiz(data);
+        })
+        .catch(error => {
+          console.error(error);
+          status.innerHTML = "<p class='error'>Error generating quiz</p>";
+        });
+    }
+
+    function renderQuiz(data) {
+      const quizContainer = document.getElementById("quizContainer");
+
+      const title = document.createElement("h2");
+      title.textContent = data.title;
+      quizContainer.appendChild(title);
+
+      data.quiz.forEach((q, index) => {
+        const questionDiv = document.createElement("div");
+        questionDiv.className = "question";
+
+        const questionText = document.createElement("p");
+        questionText.innerHTML = `<strong>Q${index + 1}.</strong> ${q.question}`;
+        questionDiv.appendChild(questionText);
+
+        const optionsList = document.createElement("ul");
+        optionsList.className = "options";
+
+        q.options.forEach(option => {
+          const li = document.createElement("li");
+          li.textContent = option;
+          optionsList.appendChild(li);
+        });
+
+        questionDiv.appendChild(optionsList);
+
+        const answer = document.createElement("p");
+        answer.className = "answer";
+        answer.textContent = "Answer: " + q.answer;
+        questionDiv.appendChild(answer);
+
+        quizContainer.appendChild(questionDiv);
       });
-
-      document.getElementById("result").innerHTML = html;
-    })
-    .catch(() => alert("Error generating quiz"));
-}
-
-/* LOAD HISTORY */
-function loadHistory() {
-  fetch(`${BACKEND}/history`)
-    .then(res => res.json())
-    .then(data => {
-      let html = "";
-
-      data.forEach((item, index) => {
-        html += `
-          <div class="card">
-            <b>${index + 1}. ${item.title}</b><br/>
-            <small>${item.url}</small>
-            <button onclick='showDetails(${JSON.stringify(item)})'>Details</button>
-          </div>
-        `;
-      });
-
-      document.getElementById("historyResult").innerHTML = html;
-    });
-}
-
-/* SHOW DETAILS */
-function showDetails(item) {
-  let html = `<h3>${item.title}</h3>`;
-
-  item.quiz.forEach((q, i) => {
-    html += `
-      <div class="card">
-        <b>Q${i+1}: ${q.question}</b>
-        <ul>${q.options.map(o => `<li>${o}</li>`).join("")}</ul>
-        <b>Answer:</b> ${q.answer}<br/>
-        <i>${q.explanation}</i>
-      </div>
-    `;
-  });
-
-  document.getElementById("historyResult").innerHTML = html;
-}
-</script>
+    }
+  </script>
 
 </body>
 </html>
