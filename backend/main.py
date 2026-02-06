@@ -1,11 +1,9 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from pydantic import BaseModel
-import requests
 
 app = FastAPI()
 
-# Allow Netlify frontend
+# Allow frontend to call backend
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -14,45 +12,32 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-quiz_history = []
-
+# ROOT TEST
 @app.get("/")
 def root():
-    return {"message": "AI Wiki Quiz Generator API is running"}
+    return {"message": "AI Wiki Quiz Backend is running"}
 
+# GENERATE QUIZ (GET)
 @app.get("/generate-quiz")
 def generate_quiz(url: str):
-    title = url.split("/")[-1].replace("_", " ")
-
-    quiz = [
-        {
-            "question": f"Who is {title}?",
-            "options": ["Scientist", "Actor", "Politician", "Writer"],
-            "answer": "Scientist",
-            "explanation": f"{title} is best known as a scientist."
-        },
-        {
-            "question": f"What is {title} famous for?",
-            "options": [
-                "Computer Science",
-                "Sports",
-                "Music",
-                "Movies"
-            ],
-            "answer": "Computer Science",
-            "explanation": f"{title} made major contributions to computer science."
-        }
-    ]
-
-    data = {
-        "title": title,
-        "url": url,
-        "quiz": quiz
+    return {
+        "title": "Alan Turing",
+        "quiz": [
+            {
+                "question": "Who was Alan Turing?",
+                "options": [
+                    "Mathematician",
+                    "Actor",
+                    "Politician",
+                    "Writer"
+                ],
+                "answer": "Mathematician",
+                "explanation": "Alan Turing was a mathematician and computer scientist."
+            }
+        ]
     }
 
-    quiz_history.append(data)
-    return data
-
+# HISTORY
 @app.get("/history")
 def history():
-    return quiz_history
+    return []
