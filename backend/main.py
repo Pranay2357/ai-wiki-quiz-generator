@@ -3,7 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 app = FastAPI()
 
-# Allow frontend to call backend
+# Allow frontend (Netlify) to call backend (Render)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -12,16 +12,21 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# ROOT TEST
+# ---------------------------
+# ROOT CHECK
+# ---------------------------
 @app.get("/")
 def root():
     return {"message": "AI Wiki Quiz Backend is running"}
 
+# ---------------------------
 # GENERATE QUIZ (GET)
+# ---------------------------
 @app.get("/generate-quiz")
 def generate_quiz(url: str):
     return {
         "title": "Alan Turing",
+        "source_url": url,
         "quiz": [
             {
                 "question": "Who was Alan Turing?",
@@ -37,7 +42,9 @@ def generate_quiz(url: str):
         ]
     }
 
-# HISTORY
+# ---------------------------
+# HISTORY (GET)
+# ---------------------------
 @app.get("/history")
 def history():
     return []

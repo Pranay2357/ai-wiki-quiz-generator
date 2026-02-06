@@ -2,39 +2,17 @@
 <html>
 <head>
   <title>AI Wiki Quiz Generator</title>
-
   <style>
-    body {
-      font-family: Arial, sans-serif;
-      padding: 20px;
-    }
-
-    input {
-      width: 80%;
-      padding: 8px;
-      margin: 5px 0;
-    }
-
-    button {
-      padding: 8px 12px;
-      margin: 5px;
-      cursor: pointer;
-    }
-
-    .tab {
-      display: none;
-    }
-
-    .active {
-      display: block;
-    }
-
+    body { font-family: Arial; padding: 20px; }
+    button { padding: 8px 12px; margin: 5px; }
+    input { width: 80%; padding: 8px; }
+    .tab { display: none; }
+    .active { display: block; }
     .card {
       border: 1px solid #ccc;
       padding: 15px;
       margin-top: 10px;
       border-radius: 5px;
-      background: #f9f9f9;
     }
   </style>
 </head>
@@ -48,63 +26,43 @@
 
 <hr/>
 
-<!-- ================= GENERATE TAB ================= -->
+<!-- GENERATE TAB -->
 <div id="generate" class="tab active">
-  <input
-    id="url"
-    type="text"
-    placeholder="Paste Wikipedia URL here"
-  />
-  <br/>
+  <input id="url" placeholder="Paste Wikipedia URL here" />
   <button onclick="generateQuiz()">Generate Quiz</button>
-
   <div id="result"></div>
 </div>
 
-<!-- ================= HISTORY TAB ================= -->
+<!-- HISTORY TAB -->
 <div id="history" class="tab">
   <button onclick="loadHistory()">Load History</button>
   <div id="historyResult"></div>
 </div>
 
 <script>
-/* ---------------- TAB SWITCHING ---------------- */
+const BACKEND = "https://ai-wiki-quiz-backend-s908.onrender.com";
+
+/* TAB SWITCH */
 function showTab(tab) {
   document.getElementById("generate").classList.remove("active");
   document.getElementById("history").classList.remove("active");
   document.getElementById(tab).classList.add("active");
 }
 
-/* ---------------- GENERATE QUIZ ---------------- */
+/* GENERATE QUIZ */
 function generateQuiz() {
   const url = document.getElementById("url").value;
 
-  if (!url) {
-    alert("Please paste a Wikipedia URL");
-    return;
-  }
-
-  const apiUrl =
-    "https://ai-wiki-quiz-backend-s908.onrender.com/generate-quiz?url=" +
-    encodeURIComponent(url);
-
-  fetch(apiUrl)
-    .then(res => {
-      if (!res.ok) {
-        throw new Error("Server error");
-      }
-      return res.json();
-    })
+  fetch(`${BACKEND}/generate-quiz?url=${encodeURIComponent(url)}`)
+    .then(res => res.json())
     .then(data => {
       let html = `<h3>${data.title}</h3>`;
 
       data.quiz.forEach((q, i) => {
         html += `
           <div class="card">
-            <b>Q${i + 1}: ${q.question}</b>
-            <ul>
-              ${q.options.map(o => `<li>${o}</li>`).join("")}
-            </ul>
+            <b>Q${i+1}: ${q.question}</b>
+            <ul>${q.options.map(o => `<li>${o}</li>`).join("")}</ul>
             <b>Answer:</b> ${q.answer}<br/>
             <i>${q.explanation}</i>
           </div>
@@ -113,15 +71,12 @@ function generateQuiz() {
 
       document.getElementById("result").innerHTML = html;
     })
-    .catch(err => {
-      alert("Error generating quiz");
-      console.error(err);
-    });
+    .catch(() => alert("Error generating quiz"));
 }
 
-/* ---------------- LOAD HISTORY ---------------- */
+/* LOAD HISTORY */
 function loadHistory() {
-  fetch("https://ai-wiki-quiz-backend-s908.onrender.com/history")
+  fetch(`${BACKEND}/history`)
     .then(res => res.json())
     .then(data => {
       let html = "";
@@ -130,33 +85,25 @@ function loadHistory() {
         html += `
           <div class="card">
             <b>${index + 1}. ${item.title}</b><br/>
-            <small>${item.url}</small><br/>
-            <button onclick='showDetails(${JSON.stringify(item)})'>
-              Details
-            </button>
+            <small>${item.url}</small>
+            <button onclick='showDetails(${JSON.stringify(item)})'>Details</button>
           </div>
         `;
       });
 
       document.getElementById("historyResult").innerHTML = html;
-    })
-    .catch(err => {
-      alert("Error loading history");
-      console.error(err);
     });
 }
 
-/* ---------------- SHOW HISTORY DETAILS ---------------- */
+/* SHOW DETAILS */
 function showDetails(item) {
   let html = `<h3>${item.title}</h3>`;
 
   item.quiz.forEach((q, i) => {
     html += `
       <div class="card">
-        <b>Q${i + 1}: ${q.question}</b>
-        <ul>
-          ${q.options.map(o => `<li>${o}</li>`).join("")}
-        </ul>
+        <b>Q${i+1}: ${q.question}</b>
+        <ul>${q.options.map(o => `<li>${o}</li>`).join("")}</ul>
         <b>Answer:</b> ${q.answer}<br/>
         <i>${q.explanation}</i>
       </div>
